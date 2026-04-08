@@ -4,6 +4,7 @@ struct PodcastRowView: View {
     let episode: PodcastEpisode
     let onPlay: () -> Void
     @Environment(AudioPlayer.self) private var player
+    @Environment(PodcastStore.self) private var store
 
     var isPlaying: Bool {
         player.currentEpisode?.id == episode.id && player.state == .playing
@@ -43,9 +44,20 @@ struct PodcastRowView: View {
                 }
 
                 if episode.durationSeconds > 0 {
-                    Text(formatDuration(episode.durationSeconds))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    HStack(spacing: 6) {
+                        Text(formatDuration(episode.durationSeconds))
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        if store.isDownloaded(episode) {
+                            Label("Nedlastet", systemImage: "arrow.down.circle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.green)
+                        } else if store.isDownloading(episode) {
+                            Label("Laster ned", systemImage: "arrow.down.circle.dotted")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

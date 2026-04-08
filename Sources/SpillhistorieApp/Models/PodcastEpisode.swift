@@ -1,6 +1,6 @@
 import Foundation
 
-struct PodcastEpisode: Identifiable, Hashable {
+struct PodcastEpisode: Identifiable, Hashable, Codable {
     let id: String          // audioURL string used as stable ID
     let title: String
     let audioURL: URL

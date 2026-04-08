@@ -4,6 +4,8 @@ struct ArticleDetailView: View {
     let articleID: Int
     let fallbackArticle: Article?
     @Environment(ArticleStore.self) private var store
+    @Environment(AppSettings.self) private var settings
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var blocks: [ArticleBlock] = []
     @State private var isLoading = true
     @State private var loadFailed = false
@@ -51,7 +53,7 @@ struct ArticleDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 280)
+            .frame(height: horizontalSizeClass == .compact ? 220 : 280)
             .clipped()
         }
     }
@@ -62,6 +64,7 @@ struct ArticleDetailView: View {
             Text(article?.title ?? "")
                 .font(.title)
                 .fontWeight(.bold)
+                .fontDesign(settings.fontStyle.design)
                 .padding(.top, 20)
 
             HStack(spacing: 8) {
@@ -98,9 +101,10 @@ struct ArticleDetailView: View {
                 )
             } else {
                 ArticleView(blocks: blocks)
+                    .fontDesign(settings.fontStyle.design)
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, horizontalSizeClass == .compact ? 16 : 20)
         .padding(.bottom, 48)
     }
 

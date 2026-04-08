@@ -31,12 +31,12 @@ final class AudioPlayer {
 
     // MARK: - Public controls
 
-    func play(_ episode: PodcastEpisode, from position: TimeInterval = 0) {
-        prepare(episode, position: position, autoplay: true)
+    func play(_ episode: PodcastEpisode, using playbackURL: URL? = nil, from position: TimeInterval = 0) {
+        prepare(episode, playbackURL: playbackURL, position: position, autoplay: true)
     }
 
     func restore(_ episode: PodcastEpisode, from position: TimeInterval) {
-        prepare(episode, position: position, autoplay: false)
+        prepare(episode, playbackURL: nil, position: position, autoplay: false)
     }
 
     func togglePlayPause() {
@@ -114,13 +114,13 @@ final class AudioPlayer {
 
     // MARK: - Private
 
-    private func prepare(_ episode: PodcastEpisode, position: TimeInterval, autoplay: Bool) {
+    private func prepare(_ episode: PodcastEpisode, playbackURL: URL?, position: TimeInterval, autoplay: Bool) {
         stop(saveResume: false)
         currentEpisode = episode
         state = autoplay ? .buffering : .paused
         duration = TimeInterval(episode.durationSeconds)
 
-        let item = AVPlayerItem(url: episode.audioURL)
+        let item = AVPlayerItem(url: playbackURL ?? episode.audioURL)
         player = AVPlayer(playerItem: item)
         player?.seek(to: CMTime(seconds: position, preferredTimescale: 1000))
         if autoplay {

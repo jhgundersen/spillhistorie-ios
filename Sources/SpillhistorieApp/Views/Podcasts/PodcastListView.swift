@@ -26,7 +26,7 @@ struct PodcastListView: View {
                         if player.currentEpisode?.id == episode.id {
                             player.togglePlayPause()
                         } else {
-                            player.play(episode)
+                            player.play(episode, using: store.playbackURL(for: episode))
                         }
                     }
                     .tag(episode.id)
@@ -35,8 +35,23 @@ struct PodcastListView: View {
                         selectedEpisode = episode
                     }
                         .swipeActions(edge: .trailing) {
+                            if store.isDownloaded(episode) {
+                                Button(role: .destructive) {
+                                    store.deleteDownload(for: episode)
+                                } label: {
+                                    Label("Slett", systemImage: "trash")
+                                }
+                            } else {
+                                Button {
+                                    Task { await store.downloadEpisode(episode) }
+                                } label: {
+                                    Label("Last ned", systemImage: "arrow.down.circle")
+                                }
+                                .tint(.blue)
+                            }
+
                             Button {
-                                player.play(episode, from: 0)
+                                player.play(episode, using: store.playbackURL(for: episode), from: 0)
                             } label: {
                                 Label("Spill av", systemImage: "play.fill")
                             }
@@ -44,10 +59,19 @@ struct PodcastListView: View {
                         }
                         .contextMenu {
                             Button("Spill av", systemImage: "play.fill") {
-                                player.play(episode)
+                                player.play(episode, using: store.playbackURL(for: episode))
                             }
                             Button("Spill fra starten", systemImage: "arrow.counterclockwise") {
-                                player.play(episode, from: 0)
+                                player.play(episode, using: store.playbackURL(for: episode), from: 0)
+                            }
+                            if store.isDownloaded(episode) {
+                                Button("Slett nedlasting", systemImage: "trash", role: .destructive) {
+                                    store.deleteDownload(for: episode)
+                                }
+                            } else {
+                                Button("Last ned", systemImage: "arrow.down.circle") {
+                                    Task { await store.downloadEpisode(episode) }
+                                }
                             }
                             ShareLink(item: episode.audioURL) {
                                 Label("Del episode", systemImage: "square.and.arrow.up")

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MiniPlayerView: View {
     @Environment(AudioPlayer.self) private var player
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showFullPlayer = false
 
     var body: some View {
@@ -15,9 +16,9 @@ struct MiniPlayerView: View {
                 }
                 .frame(height: 2)
 
-                HStack(spacing: 16) {
+                HStack(spacing: horizontalSizeClass == .compact ? 12 : 16) {
                     // Artwork thumbnail
-                    ArtworkView(url: episode.artworkURL, size: 40)
+                    ArtworkView(url: episode.artworkURL, size: horizontalSizeClass == .compact ? 34 : 40)
 
                     // Title + series
                     VStack(alignment: .leading, spacing: 2) {
@@ -31,12 +32,13 @@ struct MiniPlayerView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    // Skip back
-                    Button {
-                        player.seek(by: -10)
-                    } label: {
-                        Image(systemName: "gobackward.10")
-                            .imageScale(.large)
+                    if horizontalSizeClass != .compact {
+                        Button {
+                            player.seek(by: -10)
+                        } label: {
+                            Image(systemName: "gobackward.10")
+                                .imageScale(.large)
+                        }
                     }
 
                     // Play/pause
@@ -48,15 +50,16 @@ struct MiniPlayerView: View {
                             .frame(width: 28)
                     }
 
-                    // Skip forward
-                    Button {
-                        player.seek(by: 30)
-                    } label: {
-                        Image(systemName: "goforward.30")
-                            .imageScale(.large)
+                    if horizontalSizeClass != .compact {
+                        Button {
+                            player.seek(by: 30)
+                        } label: {
+                            Image(systemName: "goforward.30")
+                                .imageScale(.large)
+                        }
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, horizontalSizeClass == .compact ? 12 : 16)
                 .padding(.vertical, 10)
                 .background(.regularMaterial)
             }

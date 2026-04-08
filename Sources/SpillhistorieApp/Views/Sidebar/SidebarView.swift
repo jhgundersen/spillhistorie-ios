@@ -4,6 +4,7 @@ struct SidebarView: View {
     @Environment(ArticleStore.self) private var store
     @Binding var selectedCategory: ArticleCategory
     @Binding var showPodcasts: Bool
+    @Binding var showSettings: Bool
 
     var body: some View {
         List {
@@ -12,6 +13,7 @@ struct SidebarView: View {
                     Button {
                         selectedCategory = category
                         showPodcasts = false
+                        showSettings = false
                     } label: {
                         Label(category.name, systemImage: categoryIcon(category))
                             .foregroundStyle(selectedCategory.id == category.id && !showPodcasts ? Color.accentColor : Color.primary)
@@ -27,11 +29,23 @@ struct SidebarView: View {
             Section("Podkast") {
                 Button {
                     showPodcasts = true
+                    showSettings = false
                 } label: {
                     Label("Alle episoder", systemImage: "waveform")
                         .foregroundStyle(showPodcasts ? Color.accentColor : Color.primary)
                 }
                 .listRowBackground(showPodcasts ? Color.accentColor.opacity(0.12) : Color.clear)
+            }
+
+            Section("App") {
+                Button {
+                    showSettings = true
+                    showPodcasts = false
+                } label: {
+                    Label("Innstillinger", systemImage: "gearshape")
+                        .foregroundStyle(showSettings ? Color.accentColor : Color.primary)
+                }
+                .listRowBackground(showSettings ? Color.accentColor.opacity(0.12) : Color.clear)
             }
         }
         .listStyle(.sidebar)

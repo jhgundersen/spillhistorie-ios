@@ -3,6 +3,7 @@ import SwiftUI
 struct FullPlayerSheet: View {
     @Environment(AudioPlayer.self) private var player
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isDraggingSlider = false
     @State private var sliderValue: Double = 0
 
@@ -12,7 +13,7 @@ struct FullPlayerSheet: View {
                 VStack(spacing: 24) {
                     // Large artwork
                     if let episode = player.currentEpisode {
-                        ArtworkView(url: episode.artworkURL, size: 220)
+                        ArtworkView(url: episode.artworkURL, size: horizontalSizeClass == .compact ? 180 : 220)
                             .shadow(radius: 8)
 
                         // Title + series
@@ -32,7 +33,7 @@ struct FullPlayerSheet: View {
 
                         // Controls
                         controlsSection
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, horizontalSizeClass == .compact ? 20 : 32)
 
                         // Chapters
                         if !player.chapters.isEmpty {
@@ -51,6 +52,7 @@ struct FullPlayerSheet: View {
                 }
             }
         }
+        .presentationDetents(horizontalSizeClass == .compact ? [.large] : [.medium, .large])
     }
 
     // MARK: - Scrubber

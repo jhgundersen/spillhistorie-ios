@@ -16,6 +16,7 @@
 		1D3B0DC20226EB7124F75B73 /* ArticleDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E0BD8B9248885E757B63F51 /* ArticleDocument.swift */; };
 		1FF6A020048D965C125D85AF /* ArticleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57AAAB9008351081FF63A258 /* ArticleDetailView.swift */; };
 		214BCE72D5D4309570EB0071 /* ResumeStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB30E05275A4DE831391846E /* ResumeStateStore.swift */; };
+		27583E821AE2C80C5130F76C /* PodcastCacheStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4FC0C639BD9701BCF25D0D8 /* PodcastCacheStore.swift */; };
 		2F1DC420156C3F41F5E6EBDF /* ArticleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D80C6C73FA71A6070F6E6EF2 /* ArticleListView.swift */; };
 		41F2D3F4348F4F0E5F63E872 /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = 873656158E6286D39519F0B7 /* Article.swift */; };
 		42CDA20D281833BC5708AA79 /* FullPlayerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2713114D1C4F2DBB2174E79 /* FullPlayerSheet.swift */; };
@@ -24,6 +25,7 @@
 		5159A973CFBA87356CD7F9C7 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE5B7F1C6381FC42EE265562 /* NetworkClient.swift */; };
 		55FD6BB7F901691CFB7941A6 /* PodcastEpisode.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC4B8337EF67F16427EE2D9 /* PodcastEpisode.swift */; };
 		5BA21971C8E21F5AC284734E /* ListBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CBF9F25E88F8F85C5064737 /* ListBlockView.swift */; };
+		654ADD144313A37E7ED1C1A8 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A23CDF25059A3BF1A06D86 /* AppSettings.swift */; };
 		6FAB7DF3AAAD9494B0989E1C /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 796678A5AE4BF8026B83972B /* NowPlayingManager.swift */; };
 		814F0B05B7D5BBF1AB33C634 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2601A5ADE62306A299DA6A98 /* Assets.xcassets */; };
 		89BAECB9983EBE1DD50C9AE6 /* Notice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94308C2188F6270ED61AD4B6 /* Notice.swift */; };
@@ -38,6 +40,7 @@
 		CA6DC74EBC9AA4C021F9ED33 /* ArticleRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1526C1D049F15227B0EE9236 /* ArticleRowView.swift */; };
 		D8E20E11E2E069727E9586B0 /* WordPressAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D555507D9D6DE8FBCEE44EF /* WordPressAPI.swift */; };
 		ECA2B03E77A162B9407939CF /* ArticleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34775B54543A64794E0875A6 /* ArticleStore.swift */; };
+		EE77307502AE3CB3A774FC69 /* PodcastDownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3121974C8D780C02287E26A /* PodcastDownloadStore.swift */; };
 		EF05E9844F990FA51959F551 /* SpillhistorieApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A6ECABE1CB00DF0D962450 /* SpillhistorieApp.swift */; };
 		F34167B1399113B7CF65E614 /* PodcastFeedParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 807A60A69870B6D448512023 /* PodcastFeedParser.swift */; };
 		F37C1A7119EB9589E8ADFAFE /* BlockquoteBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D88C9F843126F6F7679C24 /* BlockquoteBlockView.swift */; };
@@ -50,6 +53,7 @@
 		0C78C19288B0FFD50E9D1014 /* ArticleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleView.swift; sourceTree = "<group>"; };
 		0CBF9F25E88F8F85C5064737 /* ListBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListBlockView.swift; sourceTree = "<group>"; };
 		1526C1D049F15227B0EE9236 /* ArticleRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleRowView.swift; sourceTree = "<group>"; };
+		15A23CDF25059A3BF1A06D86 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		20FED127047E9D6FBE1B66B2 /* ParagraphBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParagraphBlockView.swift; sourceTree = "<group>"; };
 		2601A5ADE62306A299DA6A98 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		277D5BCA198A887C959477C1 /* CodeBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockView.swift; sourceTree = "<group>"; };
@@ -79,10 +83,12 @@
 		ACC4B8337EF67F16427EE2D9 /* PodcastEpisode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisode.swift; sourceTree = "<group>"; };
 		BE5B7F1C6381FC42EE265562 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
 		D80C6C73FA71A6070F6E6EF2 /* ArticleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleListView.swift; sourceTree = "<group>"; };
+		E3121974C8D780C02287E26A /* PodcastDownloadStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastDownloadStore.swift; sourceTree = "<group>"; };
 		E6BE218ADA36A3D162BC7DD0 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		EB30E05275A4DE831391846E /* ResumeStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResumeStateStore.swift; sourceTree = "<group>"; };
 		EBF74782C255C8823EBA7CDA /* PodcastRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRowView.swift; sourceTree = "<group>"; };
 		F2713114D1C4F2DBB2174E79 /* FullPlayerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPlayerSheet.swift; sourceTree = "<group>"; };
+		F4FC0C639BD9701BCF25D0D8 /* PodcastCacheStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastCacheStore.swift; sourceTree = "<group>"; };
 		FA195B9D1F85ADCA8B753555 /* ImageBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageBlockView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -155,8 +161,11 @@
 		4EF0E86943130D0A58915EAD /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				15A23CDF25059A3BF1A06D86 /* AppSettings.swift */,
 				5E6D993DF0E9E4F79065EB0E /* ArticleCacheStore.swift */,
 				34775B54543A64794E0875A6 /* ArticleStore.swift */,
+				F4FC0C639BD9701BCF25D0D8 /* PodcastCacheStore.swift */,
+				E3121974C8D780C02287E26A /* PodcastDownloadStore.swift */,
 				46C17C6AD4353573DB04F8CE /* PodcastStore.swift */,
 			);
 			path = Store;
@@ -324,6 +333,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				654ADD144313A37E7ED1C1A8 /* AppSettings.swift in Sources */,
 				41F2D3F4348F4F0E5F63E872 /* Article.swift in Sources */,
 				8A382C22BA91ED7D1AD527EA /* ArticleCacheStore.swift in Sources */,
 				1FF6A020048D965C125D85AF /* ArticleDetailView.swift in Sources */,
@@ -347,6 +357,8 @@
 				B271001CB377DA72086D6E2D /* NoticesBannerView.swift in Sources */,
 				6FAB7DF3AAAD9494B0989E1C /* NowPlayingManager.swift in Sources */,
 				18CA74F9BA395D6DFB54D9CD /* ParagraphBlockView.swift in Sources */,
+				27583E821AE2C80C5130F76C /* PodcastCacheStore.swift in Sources */,
+				EE77307502AE3CB3A774FC69 /* PodcastDownloadStore.swift in Sources */,
 				55FD6BB7F901691CFB7941A6 /* PodcastEpisode.swift in Sources */,
 				F34167B1399113B7CF65E614 /* PodcastFeedParser.swift in Sources */,
 				10A0685D9590017C478E5F2C /* PodcastListView.swift in Sources */,
@@ -429,7 +441,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.10;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -523,7 +535,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.10;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

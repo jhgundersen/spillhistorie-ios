@@ -4,8 +4,11 @@ struct RootView: View {
     @Environment(ArticleStore.self) private var articleStore
     @Environment(PodcastStore.self) private var podcastStore
     @Environment(AudioPlayer.self) private var audioPlayer
+    @Environment(AppSettings.self) private var settings
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedCategory: ArticleCategory = ArticleCategory.all[0]
     @State private var showPodcasts = false
+    @State private var showSettings = false
     @State private var selectedArticle: Article?
     @State private var selectedEpisode: PodcastEpisode?
 
@@ -13,16 +16,21 @@ struct RootView: View {
         NavigationSplitView {
             SidebarView(
                 selectedCategory: $selectedCategory,
-                showPodcasts: $showPodcasts
+                showPodcasts: $showPodcasts,
+                showSettings: $showSettings
             )
         } content: {
-            if showPodcasts {
+            if showSettings {
+                SettingsPromptView()
+            } else if showPodcasts {
                 PodcastListView(selectedEpisode: $selectedEpisode)
             } else {
                 ArticleListView(category: selectedCategory, selectedArticle: $selectedArticle)
             }
         } detail: {
-            if showPodcasts, let selectedEpisode {
+            if showSettings {
+                SettingsView()
+            } else if showPodcasts, let selectedEpisode {
                 PodcastEpisodeDetailView(episode: selectedEpisode)
             } else if let selectedArticle {
                 ArticleDetailView(articleID: selectedArticle.id, fallbackArticle: selectedArticle)
@@ -34,7 +42,6 @@ struct RootView: View {
                 )
             }
         }
-        .navigationSplitViewStyle(.balanced)
         .safeAreaInset(edge: .bottom) {
             MiniPlayerView()
         }
@@ -48,9 +55,62 @@ struct RootView: View {
             }
         }
         .onChange(of: selectedCategory) { _, newCat in
+            showSettings = false
             showPodcasts = false
             Task { await articleStore.loadCategory(newCat) }
         }
+    }
+}
+
+private struct SettingsPromptView: View {
+    var body: some View {
+        ContentUnavailableView(
+            "Innstillinger",
+            systemImage: "gearshape",
+            description: Text("Juster utseende, skrifttype og podkastcache i panelet til hoyre.")
+        )
+    }
+}
+
+private struct SettingsView: View {
+    @Environment(AppSettings.self) private var settings
+    @Environment(PodcastStore.self) private var podcastStore
+    @State private var clearedPodcastCache = false
+
+    var body: some View {
+        Form {
+            Section("Utseende") {
+                Toggle("Dark mode", isOn: Bindable(settings).darkModeEnabled)
+
+                Picker("Skrifttype", selection: Bindable(settings).fontStyle) {
+                    ForEach(AppSettings.FontStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
+                }
+                .pickerStyle(.inline)
+
+                Text("Skrifttypen brukes bare i artikkelvisningen.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Podkast") {
+                Button(role: .destructive) {
+                    podcastStore.clearCache()
+                    clearedPodcastCache = true
+                } label: {
+                    Label("Slett podkastcache", systemImage: "trash")
+                }
+
+                if clearedPodcastCache {
+                    Text("Podkastcache og nedlastinger slettet. Episodene kan lastes ned pa nytt senere.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+        }
+        .navigationTitle("Innstillinger")
     }
 }
 
@@ -58,7 +118,8 @@ private struct PodcastEpisodeDetailView: View {
     let episode: PodcastEpisode
 
     @Environment(AudioPlayer.self) private var player
-    @Environment(\.openURL) private var openURL
+    @Environment(PodcastStore.self) private var podcastStore
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         ScrollView {
@@ -82,22 +143,34 @@ private struct PodcastEpisodeDetailView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 20) {
-            ArtworkView(url: episode.artworkURL, size: 180)
-
-            VStack(alignment: .leading, spacing: 12) {
-                Text(episode.title)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-
-                Text(episode.series)
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-
-                Text(episode.author)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+        Group {
+            if horizontalSizeClass == .compact {
+                VStack(alignment: .leading, spacing: 16) {
+                    ArtworkView(url: episode.artworkURL, size: 140)
+                    episodeTextHeader(titleFont: .title2)
+                }
+            } else {
+                HStack(alignment: .top, spacing: 20) {
+                    ArtworkView(url: episode.artworkURL, size: 180)
+                    episodeTextHeader(titleFont: .largeTitle)
+                }
             }
+        }
+    }
+
+    private func episodeTextHeader(titleFont: Font) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(episode.title)
+                .font(titleFont)
+                .fontWeight(.bold)
+
+            Text(episode.series)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+
+            Text(episode.author)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -113,12 +186,13 @@ private struct PodcastEpisodeDetailView: View {
     }
 
     private var actionRow: some View {
-        HStack(spacing: 12) {
+        let stack = horizontalSizeClass == .compact ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
+        return stack {
             Button {
                 if player.currentEpisode?.id == episode.id {
                     player.togglePlayPause()
                 } else {
-                    player.play(episode)
+                    player.play(episode, using: podcastStore.playbackURL(for: episode))
                 }
             } label: {
                 Label(player.currentEpisode?.id == episode.id && player.state == .playing ? "Pause" : "Spill av", systemImage: player.currentEpisode?.id == episode.id && player.state == .playing ? "pause.fill" : "play.fill")
@@ -126,7 +200,7 @@ private struct PodcastEpisodeDetailView: View {
             .buttonStyle(.borderedProminent)
 
             Button {
-                player.play(episode, from: 0)
+                player.play(episode, using: podcastStore.playbackURL(for: episode), from: 0)
             } label: {
                 Label("Fra starten", systemImage: "arrow.counterclockwise")
             }
@@ -136,12 +210,22 @@ private struct PodcastEpisodeDetailView: View {
                 Label("Del episode", systemImage: "square.and.arrow.up")
             }
 
-            Button {
-                openURL(episode.audioURL)
-            } label: {
-                Label("Apne lydfil", systemImage: "safari")
+            if podcastStore.isDownloaded(episode) {
+                Button(role: .destructive) {
+                    podcastStore.deleteDownload(for: episode)
+                } label: {
+                    Label("Slett nedlasting", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+            } else {
+                Button {
+                    Task { await podcastStore.downloadEpisode(episode) }
+                } label: {
+                    Label(podcastStore.isDownloading(episode) ? "Laster ned..." : "Last ned", systemImage: podcastStore.isDownloading(episode) ? "arrow.down.circle.dotted" : "arrow.down.circle")
+                }
+                .buttonStyle(.bordered)
+                .disabled(podcastStore.isDownloading(episode))
             }
-            .buttonStyle(.bordered)
         }
     }
 
@@ -158,7 +242,15 @@ private struct PodcastEpisodeDetailView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
+
+                Label(podcastStore.isDownloaded(episode) ? "Nedlastet for offline lytting" : (podcastStore.isDownloading(episode) ? "Laster ned episode" : "Ikke lastet ned"), systemImage: podcastStore.isDownloaded(episode) ? "checkmark.circle.fill" : (podcastStore.isDownloading(episode) ? "arrow.down.circle.dotted" : "icloud.and.arrow.down"))
+                    .font(.caption)
+                    .foregroundStyle(podcastStore.isDownloaded(episode) ? .green : .secondary)
             }
+        } else {
+            Label(podcastStore.isDownloaded(episode) ? "Nedlastet for offline lytting" : (podcastStore.isDownloading(episode) ? "Laster ned episode" : "Ikke lastet ned"), systemImage: podcastStore.isDownloaded(episode) ? "checkmark.circle.fill" : (podcastStore.isDownloading(episode) ? "arrow.down.circle.dotted" : "icloud.and.arrow.down"))
+                .font(.subheadline)
+                .foregroundStyle(podcastStore.isDownloaded(episode) ? .green : .secondary)
         }
     }
 
