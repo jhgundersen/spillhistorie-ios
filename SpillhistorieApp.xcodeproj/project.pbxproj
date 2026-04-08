@@ -27,6 +27,7 @@
 		6FAB7DF3AAAD9494B0989E1C /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 796678A5AE4BF8026B83972B /* NowPlayingManager.swift */; };
 		814F0B05B7D5BBF1AB33C634 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2601A5ADE62306A299DA6A98 /* Assets.xcassets */; };
 		89BAECB9983EBE1DD50C9AE6 /* Notice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94308C2188F6270ED61AD4B6 /* Notice.swift */; };
+		8A382C22BA91ED7D1AD527EA /* ArticleCacheStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6D993DF0E9E4F79065EB0E /* ArticleCacheStore.swift */; };
 		8B349F0F012AB9D57C37779C /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F119FD53F578A3B0997A11C /* MiniPlayerView.swift */; };
 		AED5A5744D5A0AE2A246B31A /* ResumeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE5A97B7C42DF87FEBE3EE7 /* ResumeState.swift */; };
 		B271001CB377DA72086D6E2D /* NoticesBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACD3F6586EBE8CE49F90754 /* NoticesBannerView.swift */; };
@@ -61,6 +62,7 @@
 		57AAAB9008351081FF63A258 /* ArticleDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleDetailView.swift; sourceTree = "<group>"; };
 		5D555507D9D6DE8FBCEE44EF /* WordPressAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordPressAPI.swift; sourceTree = "<group>"; };
 		5E0BD8B9248885E757B63F51 /* ArticleDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleDocument.swift; sourceTree = "<group>"; };
+		5E6D993DF0E9E4F79065EB0E /* ArticleCacheStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleCacheStore.swift; sourceTree = "<group>"; };
 		64356C29402881EE2442D6FA /* PodcastListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastListView.swift; sourceTree = "<group>"; };
 		65D88C9F843126F6F7679C24 /* BlockquoteBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockquoteBlockView.swift; sourceTree = "<group>"; };
 		6A59CED4091429E90689018F /* ChapterFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterFetcher.swift; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 		4EF0E86943130D0A58915EAD /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				5E6D993DF0E9E4F79065EB0E /* ArticleCacheStore.swift */,
 				34775B54543A64794E0875A6 /* ArticleStore.swift */,
 				46C17C6AD4353573DB04F8CE /* PodcastStore.swift */,
 			);
@@ -322,6 +325,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				41F2D3F4348F4F0E5F63E872 /* Article.swift in Sources */,
+				8A382C22BA91ED7D1AD527EA /* ArticleCacheStore.swift in Sources */,
 				1FF6A020048D965C125D85AF /* ArticleDetailView.swift in Sources */,
 				1D3B0DC20226EB7124F75B73 /* ArticleDocument.swift in Sources */,
 				2F1DC420156C3F41F5E6EBDF /* ArticleListView.swift in Sources */,

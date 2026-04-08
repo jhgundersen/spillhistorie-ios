@@ -1,6 +1,6 @@
 import Foundation
 
-struct Article: Identifiable, Hashable {
+struct Article: Identifiable, Hashable, Codable {
     let id: Int
     let title: String
     let link: URL
@@ -18,7 +18,7 @@ struct Article: Identifiable, Hashable {
     static func == (lhs: Article, rhs: Article) -> Bool { lhs.id == rhs.id }
 }
 
-struct ArticleCategory: Identifiable, Hashable {
+struct ArticleCategory: Identifiable, Hashable, Codable {
     let id: String
     let name: String
     let wpCategoryID: Int?

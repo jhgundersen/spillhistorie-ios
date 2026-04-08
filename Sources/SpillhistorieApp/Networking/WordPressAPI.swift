@@ -114,7 +114,7 @@ private struct WPNotice: Decodable {
     let excerpt: WPRendered
 }
 
-struct ArticleEnrichment {
+struct ArticleEnrichment: Codable {
     let contentHTML: String
     let author: String?
     let featuredImageURL: URL?
