@@ -26,7 +26,7 @@ struct ArticleListView: View {
                 )
             } else {
                 List(filtered) { article in
-                    NavigationLink(value: article) {
+                    NavigationLink(value: article.id) {
                         ArticleRowView(article: article)
                     }
                     .contextMenu {
@@ -45,8 +45,8 @@ struct ArticleListView: View {
         .searchable(text: $searchText, prompt: "Søk i artikler")
         .navigationTitle(category.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: Article.self) { article in
-            ArticleDetailView(article: article)
+        .navigationDestination(for: Int.self) { articleID in
+            ArticleDetailView(articleID: articleID)
         }
         .task(id: category.id) {
             if store.selectedCategory.id != category.id {

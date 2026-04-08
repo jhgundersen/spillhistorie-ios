@@ -1,15 +1,13 @@
 import Foundation
 
+@MainActor
 @Observable
 final class ArticleStore {
     var articles: [Article] = []
     var isLoadingList = false
     var isLoadingContent = false
     var error: String?
-    var notices: [Notice] = []
     var selectedCategory: ArticleCategory = ArticleCategory.all[0]
-
-    private var contentCache: [Int: ArticleEnrichment] = [:]
 
     func loadCategory(_ category: ArticleCategory) async {
         selectedCategory = category
@@ -19,8 +17,7 @@ final class ArticleStore {
             let list = try await WordPressAPI.fetchArticleList(category: category)
             articles = list
             isLoadingList = false
-            // Phase 2: background content fetch
-            Task { await loadContent(for: list) }
+            Task { await self.loadContent(for: list) }
         } catch {
             self.error = error.localizedDescription
             isLoadingList = false
@@ -39,14 +36,16 @@ final class ArticleStore {
                 articles[i].author = e.author
                 articles[i].contentHTML = e.contentHTML
                 articles[i].featuredImageURL = e.featuredImageURL
-                contentCache[articles[i].id] = e
             }
         }
         isLoadingContent = false
     }
 
-    func loadNotices() async {
-        notices = (try? await WordPressAPI.fetchNotices()) ?? []
+    func applyEnrichment(_ enrichment: ArticleEnrichment, toArticleID id: Int) {
+        guard let idx = articles.firstIndex(where: { $0.id == id }) else { return }
+        articles[idx].author = enrichment.author
+        articles[idx].contentHTML = enrichment.contentHTML
+        articles[idx].featuredImageURL = enrichment.featuredImageURL
     }
 
     func refresh() async {

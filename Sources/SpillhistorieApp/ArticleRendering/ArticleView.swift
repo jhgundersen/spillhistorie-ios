@@ -5,7 +5,7 @@ struct ArticleView: View {
 
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(blocks) { block in
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                 ArticleBlockView(block: block)
                     .padding(.bottom, blockBottomPadding(block))
             }
@@ -36,8 +36,8 @@ struct ArticleBlockView: View {
             ParagraphBlockView(inlines: inlines)
         case .image(let src, let alt, let caption):
             ImageBlockView(src: src, alt: alt, caption: caption)
-        case .blockquote(let blocks):
-            BlockquoteBlockView(blocks: blocks)
+        case .blockquote(let inner):
+            BlockquoteBlockView(blocks: inner)
         case .codeBlock(let text):
             CodeBlockView(text: text)
         case .unorderedList(let items):

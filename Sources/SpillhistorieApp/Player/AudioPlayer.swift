@@ -7,6 +7,7 @@ enum PlayerState {
     case stopped, playing, paused, buffering
 }
 
+@MainActor
 @Observable
 final class AudioPlayer {
     static let shared = AudioPlayer()
@@ -140,15 +141,19 @@ final class AudioPlayer {
         )
     }
 
-    @objc private func handleInterruption(_ notification: Notification) {
-        guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
-        if type == .began {
-            if state == .playing { player?.pause(); state = .paused }
-        } else if type == .ended {
-            if let optionsValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt,
-               AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume) {
-                player?.play(); state = .playing
+    @objc private nonisolated func handleInterruption(_ notification: Notification) {
+        let userInfo = notification.userInfo
+        Task { @MainActor [weak self] in
+            guard let self,
+                  let typeValue = userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+            if type == .began {
+                if self.state == .playing { self.player?.pause(); self.state = .paused }
+            } else if type == .ended {
+                if let optionsValue = userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt,
+                   AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume) {
+                    self.player?.play(); self.state = .playing
+                }
             }
         }
     }
@@ -190,10 +195,12 @@ final class AudioPlayer {
         }
     }
 
-    @objc private func playerDidFinish() {
-        resumeStore.clear()
-        state = .stopped
-        currentPosition = 0
+    @objc private nonisolated func playerDidFinish() {
+        Task { @MainActor [weak self] in
+            self?.resumeStore.clear()
+            self?.state = .stopped
+            self?.currentPosition = 0
+        }
     }
 
     private func loadChapters(for episode: PodcastEpisode) {

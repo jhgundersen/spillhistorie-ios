@@ -34,7 +34,6 @@ struct RootView: View {
         }
         .task {
             await articleStore.loadCategory(selectedCategory)
-            await articleStore.loadNotices()
             // Check for resume state
             if let resume = audioPlayer.loadSavedResume() {
                 // Find matching episode after podcasts load

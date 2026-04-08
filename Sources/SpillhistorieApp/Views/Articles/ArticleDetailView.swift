@@ -1,106 +1,137 @@
 import SwiftUI
 
 struct ArticleDetailView: View {
-    let article: Article
+    let articleID: Int
+    @Environment(ArticleStore.self) private var store
     @State private var blocks: [ArticleBlock] = []
     @State private var isLoading = true
+    @State private var loadFailed = false
+
+    private var article: Article? {
+        store.articles.first { $0.id == articleID }
+    }
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                // Hero image
-                if let imageURL = article.featuredImageURL {
-                    AsyncImage(url: imageURL) { phase in
-                        if let img = phase.image {
-                            img.resizable().aspectRatio(contentMode: .fill)
-                        } else {
-                            Color(uiColor: .systemGray5).frame(height: 280)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 280)
-                    .clipped()
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    // Title
-                    Text(article.title)
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .padding(.top, 20)
-
-                    // Meta: author + date
-                    HStack(spacing: 8) {
-                        if let author = article.author {
-                            Text(author)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text("·")
-                            .foregroundStyle(.tertiary)
-                        Text(article.published, style: .date)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Divider()
-                        .padding(.vertical, 8)
-
-                    // Article body
-                    if isLoading {
-                        HStack {
-                            ProgressView()
-                            Text("Laster…")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.top, 32)
-                        .frame(maxWidth: .infinity)
-                    } else if blocks.isEmpty {
-                        ContentUnavailableView(
-                            "Ingen innhold",
-                            systemImage: "doc.text",
-                            description: Text("Innholdet kunne ikke lastes.")
-                        )
-                    } else {
-                        ArticleView(blocks: blocks)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 48)
+            // .id forces full recreation when articleID changes,
+            // preventing stale hero images from the previous article.
+            VStack(alignment: .leading, spacing: 0) {
+                heroImage
+                articleBody
             }
+            .id(articleID)
         }
-        .navigationTitle(article.title)
+        .navigationTitle(article?.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                ShareLink(item: article.link, subject: Text(article.title)) {
-                    Image(systemName: "square.and.arrow.up")
+            if let link = article?.link, let title = article?.title {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(item: link, subject: Text(title)) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
                 }
             }
         }
-        .task(id: article.id) {
-            await loadContent()
+        .task(id: articleID) {
+            await loadArticle()
         }
     }
 
-    private func loadContent() async {
-        isLoading = true
-        if let html = article.contentHTML {
-            let capturedHTML = html
-            blocks = await Task.detached(priority: .userInitiated) {
-                HTMLParser.parse(capturedHTML)
-            }.value
-        } else {
-            // Content not yet enriched — wait a bit and retry
-            try? await Task.sleep(for: .seconds(1.5))
-            if let html = article.contentHTML {
-                let capturedHTML = html
-                blocks = await Task.detached(priority: .userInitiated) {
-                    HTMLParser.parse(capturedHTML)
-                }.value
+    // MARK: - Sub-views
+
+    @ViewBuilder
+    private var heroImage: some View {
+        if let imageURL = article?.featuredImageURL {
+            AsyncImage(url: imageURL) { phase in
+                if let img = phase.image {
+                    img.resizable().aspectRatio(contentMode: .fill)
+                } else {
+                    Color(uiColor: .systemGray5)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 280)
+            .clipped()
+        }
+    }
+
+    @ViewBuilder
+    private var articleBody: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(article?.title ?? "")
+                .font(.title)
+                .fontWeight(.bold)
+                .padding(.top, 20)
+
+            HStack(spacing: 8) {
+                if let author = article?.author {
+                    Text(author)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                }
+                if let published = article?.published {
+                    Text(published, style: .date)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider().padding(.vertical, 8)
+
+            if isLoading {
+                HStack {
+                    ProgressView()
+                    Text("Laster innhold…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 32)
+                .frame(maxWidth: .infinity)
+            } else if loadFailed {
+                ContentUnavailableView(
+                    "Kunne ikke laste",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text("Prøv igjen ved å gå tilbake og åpne artikkelen på nytt.")
+                )
+            } else {
+                ArticleView(blocks: blocks)
             }
         }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 48)
+    }
+
+    // MARK: - Loading
+
+    private func loadArticle() async {
+        isLoading = true
+        loadFailed = false
+        blocks = []
+
+        let html: String
+        if let existing = article?.contentHTML {
+            // Phase 2 already delivered content
+            html = existing
+        } else {
+            // Fetch this article's content directly — don't wait for Phase 2
+            guard let enrichments = try? await WordPressAPI.fetchArticleContent(ids: [articleID]),
+                  let enrichment = enrichments[articleID]
+            else {
+                isLoading = false
+                loadFailed = true
+                return
+            }
+            // Write back to store so list row also gains author + thumbnail
+            store.applyEnrichment(enrichment, toArticleID: articleID)
+            html = enrichment.contentHTML
+        }
+
+        let captured = html
+        blocks = await Task.detached(priority: .userInitiated) {
+            HTMLParser.parse(captured)
+        }.value
         isLoading = false
     }
 }

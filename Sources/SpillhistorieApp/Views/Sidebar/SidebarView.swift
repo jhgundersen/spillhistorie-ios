@@ -7,13 +7,6 @@ struct SidebarView: View {
 
     var body: some View {
         List {
-            if !store.notices.isEmpty {
-                NoticesBannerView(notices: store.notices)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-            }
-
             Section("Artikler") {
                 ForEach(ArticleCategory.all) { category in
                     Button {

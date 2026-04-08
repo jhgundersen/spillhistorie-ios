@@ -1,8 +1,9 @@
 import Foundation
 
 // MARK: - Block types
+// Note: NOT Identifiable — ForEach uses enumerated() with index as id to guarantee stability.
 
-indirect enum ArticleBlock: Identifiable {
+indirect enum ArticleBlock {
     case heading(level: Int, text: String)
     case paragraph(inlines: [InlineSpan])
     case image(src: URL, alt: String, caption: String?)
@@ -11,19 +12,6 @@ indirect enum ArticleBlock: Identifiable {
     case unorderedList(items: [[InlineSpan]])
     case orderedList(items: [[InlineSpan]])
     case divider
-
-    var id: String {
-        switch self {
-        case .heading(let level, let text): return "h\(level)-\(text.prefix(40))"
-        case .paragraph(let inlines): return "p-\(inlines.first?.text.prefix(40) ?? "")"
-        case .image(let src, _, _): return "img-\(src.absoluteString)"
-        case .blockquote: return "bq-\(UUID())"
-        case .codeBlock(let text): return "code-\(text.prefix(40))"
-        case .unorderedList: return "ul-\(UUID())"
-        case .orderedList: return "ol-\(UUID())"
-        case .divider: return "hr-\(UUID())"
-        }
-    }
 }
 
 enum InlineSpan {

@@ -28,7 +28,7 @@ enum WordPressAPI {
         guard !ids.isEmpty else { return [:] }
         var components = URLComponents(url: base.appendingPathComponent("posts"), resolvingAgainstBaseURL: false)!
         components.queryItems = [
-            URLQueryItem(name: "_fields", value: "id,content,_links"),
+            URLQueryItem(name: "_fields", value: "id,content,_links,_embedded"),
             URLQueryItem(name: "_embed", value: "author,wp:featuredmedia"),
             URLQueryItem(name: "per_page", value: "\(ids.count)"),
             URLQueryItem(name: "include", value: ids.map { "\($0)" }.joined(separator: ",")),

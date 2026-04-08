@@ -9,7 +9,7 @@ struct BlockquoteBlockView: View {
                 .fill(Color.accentColor)
                 .frame(width: 3)
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(blocks) { block in
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                     ArticleBlockView(block: block)
                 }
             }
