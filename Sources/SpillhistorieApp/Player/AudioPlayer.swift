@@ -178,27 +178,33 @@ final class AudioPlayer {
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
-            self.currentPosition = time.seconds
-            // Update duration from actual item if available
-            if let dur = self.player?.currentItem?.duration, dur.isValid, dur.seconds > 0 {
-                self.duration = dur.seconds
+            Task { @MainActor [weak self] in
+                self?.handlePeriodicTimeUpdate(time)
             }
-            self.nowPlaying.update(
-                episode: self.currentEpisode,
-                position: self.currentPosition,
-                duration: self.duration,
-                isPlaying: self.state == .playing
+        }
+    }
+
+    private func handlePeriodicTimeUpdate(_ time: CMTime) {
+        currentPosition = time.seconds
+        if let dur = player?.currentItem?.duration, dur.isValid, dur.seconds > 0 {
+            duration = dur.seconds
+        }
+        nowPlaying.update(
+            episode: currentEpisode,
+            position: currentPosition,
+            duration: duration,
+            isPlaying: state == .playing
+        )
+        if let episode = currentEpisode {
+            let resume = ResumeState(
+                audioURL: episode.audioURL,
+                title: episode.title,
+                series: episode.series,
+                durationSeconds: duration,
+                positionSeconds: currentPosition
             )
-            // Auto-save resume state periodically
-            if let episode = self.currentEpisode {
-                let resume = ResumeState(
-                    audioURL: episode.audioURL,
-                    title: episode.title,
-                    series: episode.series,
-                    durationSeconds: self.duration,
-                    positionSeconds: self.currentPosition
-                )
-                if resume.isResumable { self.resumeStore.save(resume) }
+            if resume.isResumable {
+                resumeStore.save(resume)
             }
         }
     }

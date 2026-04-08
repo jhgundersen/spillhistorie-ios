@@ -58,12 +58,14 @@ private struct PodcastEpisodeDetailView: View {
     let episode: PodcastEpisode
 
     @Environment(AudioPlayer.self) private var player
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 metadata
+                playbackStatus
                 actionRow
                 if let summary = episode.summary, !summary.isEmpty {
                     Divider()
@@ -133,6 +135,30 @@ private struct PodcastEpisodeDetailView: View {
             ShareLink(item: episode.audioURL) {
                 Label("Del episode", systemImage: "square.and.arrow.up")
             }
+
+            Button {
+                openURL(episode.audioURL)
+            } label: {
+                Label("Apne lydfil", systemImage: "safari")
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    @ViewBuilder
+    private var playbackStatus: some View {
+        if player.currentEpisode?.id == episode.id {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(player.state == .playing ? "Spiller na" : "Klar til avspilling", systemImage: player.state == .playing ? "waveform" : "pause.circle")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                if player.duration > 0 {
+                    ProgressView(value: min(max(player.currentPosition / player.duration, 0), 1))
+                    Text("\(formatTimestamp(player.currentPosition)) av \(formatTimestamp(player.duration))")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
         }
     }
 
@@ -141,5 +167,16 @@ private struct PodcastEpisodeDetailView: View {
         let m = (seconds % 3600) / 60
         if h > 0 { return "\(h) t \(m) min" }
         return "\(m) min"
+    }
+
+    private func formatTimestamp(_ seconds: TimeInterval) -> String {
+        let total = max(Int(seconds), 0)
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        if h > 0 {
+            return String(format: "%d:%02d:%02d", h, m, s)
+        }
+        return String(format: "%d:%02d", m, s)
     }
 }

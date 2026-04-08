@@ -144,27 +144,43 @@ private extension Article {
 
 extension String {
     var htmlDecoded: String {
-        // Simple entity decoding for common cases
-        var s = self
-        s = s.replacingOccurrences(of: "&amp;", with: "&")
-        s = s.replacingOccurrences(of: "&lt;", with: "<")
-        s = s.replacingOccurrences(of: "&gt;", with: ">")
-        s = s.replacingOccurrences(of: "&quot;", with: "\"")
-        s = s.replacingOccurrences(of: "&#039;", with: "'")
-        s = s.replacingOccurrences(of: "&nbsp;", with: "\u{00A0}")
-        s = s.replacingOccurrences(of: "&#8211;", with: "–")
-        s = s.replacingOccurrences(of: "&#8212;", with: "—")
-        s = s.replacingOccurrences(of: "&#8216;", with: "\u{2018}")
-        s = s.replacingOccurrences(of: "&#8217;", with: "\u{2019}")
-        s = s.replacingOccurrences(of: "&#8220;", with: "\u{201C}")
-        s = s.replacingOccurrences(of: "&#8221;", with: "\u{201D}")
-        return s
+        guard let data = wrappedHTML.data(using: .utf8),
+              let attributed = try? NSAttributedString(
+                data: data,
+                options: [
+                    .documentType: NSAttributedString.DocumentType.html,
+                    .characterEncoding: String.Encoding.utf8.rawValue,
+                ],
+                documentAttributes: nil
+              )
+        else {
+            return self
+        }
+        return attributed.string
+            .replacingOccurrences(of: "\u{00A0}", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var htmlStripped: String {
-        // Remove HTML tags, then decode entities
-        self.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-            .htmlDecoded
+        guard let data = data(using: .utf8),
+              let attributed = try? NSAttributedString(
+                data: data,
+                options: [
+                    .documentType: NSAttributedString.DocumentType.html,
+                    .characterEncoding: String.Encoding.utf8.rawValue,
+                ],
+                documentAttributes: nil
+              )
+        else {
+            return htmlDecoded
+        }
+        return attributed.string
+            .replacingOccurrences(of: "\u{00A0}", with: " ")
+            .replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var wrappedHTML: String {
+        "<span>\(self)</span>"
     }
 }
