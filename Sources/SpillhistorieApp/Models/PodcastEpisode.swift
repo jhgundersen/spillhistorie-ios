@@ -8,6 +8,7 @@ struct PodcastEpisode: Identifiable, Hashable {
     let series: String
     let author: String
     let published: Date
+    let summary: String?
     let chapterURL: URL?
     let artworkURL: URL?
 

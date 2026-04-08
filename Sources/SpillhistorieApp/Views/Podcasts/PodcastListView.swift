@@ -3,6 +3,7 @@ import SwiftUI
 struct PodcastListView: View {
     @Environment(PodcastStore.self) private var store
     @Environment(AudioPlayer.self) private var player
+    @Binding var selectedEpisode: PodcastEpisode?
     @State private var searchText = ""
 
     var filtered: [PodcastEpisode] {
@@ -20,8 +21,19 @@ struct PodcastListView: View {
                 ProgressView("Laster episoder…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List(filtered) { episode in
-                    PodcastRowView(episode: episode)
+                List(filtered, selection: selectedEpisodeID) { episode in
+                    PodcastRowView(episode: episode) {
+                        if player.currentEpisode?.id == episode.id {
+                            player.togglePlayPause()
+                        } else {
+                            player.play(episode)
+                        }
+                    }
+                    .tag(episode.id)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedEpisode = episode
+                    }
                         .swipeActions(edge: .trailing) {
                             Button {
                                 player.play(episode, from: 0)
@@ -73,5 +85,18 @@ struct PodcastListView: View {
                     .font(.caption)
             }
         }
+    }
+
+    private var selectedEpisodeID: Binding<String?> {
+        Binding(
+            get: { selectedEpisode?.id },
+            set: { newValue in
+                guard let newValue else {
+                    selectedEpisode = nil
+                    return
+                }
+                selectedEpisode = filtered.first(where: { $0.id == newValue }) ?? store.episodes.first(where: { $0.id == newValue }) ?? selectedEpisode
+            }
+        )
     }
 }

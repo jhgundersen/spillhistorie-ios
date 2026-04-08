@@ -3,6 +3,7 @@ import SwiftUI
 struct ArticleListView: View {
     @Environment(ArticleStore.self) private var store
     let category: ArticleCategory
+    @Binding var selectedArticle: Article?
     @State private var searchText = ""
 
     var filtered: [Article] {
@@ -25,29 +26,29 @@ struct ArticleListView: View {
                     description: Text(error)
                 )
             } else {
-                List(filtered) { article in
-                    NavigationLink(value: article.id) {
-                        ArticleRowView(article: article)
-                    }
-                    .contextMenu {
-                        Button("Åpne i Safari", systemImage: "safari") {
-                            UIApplication.shared.open(article.link)
+                List(filtered, selection: selectedArticleID) { article in
+                    ArticleRowView(article: article)
+                        .tag(article.id)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedArticle = article
                         }
-                        ShareLink(item: article.link, subject: Text(article.title)) {
-                            Label("Del", systemImage: "square.and.arrow.up")
+                        .contextMenu {
+                            Button("Apne i Safari", systemImage: "safari") {
+                                UIApplication.shared.open(article.link)
+                            }
+                            ShareLink(item: article.link, subject: Text(article.title)) {
+                                Label("Del", systemImage: "square.and.arrow.up")
+                            }
                         }
-                    }
                 }
                 .listStyle(.plain)
                 .refreshable { await store.refresh() }
             }
         }
-        .searchable(text: $searchText, prompt: "Søk i artikler")
+        .searchable(text: $searchText, prompt: "Sok i artikler")
         .navigationTitle(category.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: Int.self) { articleID in
-            ArticleDetailView(articleID: articleID)
-        }
         .task(id: category.id) {
             if store.selectedCategory.id != category.id {
                 await store.loadCategory(category)
@@ -61,5 +62,18 @@ struct ArticleListView: View {
                 }
             }
         }
+    }
+
+    private var selectedArticleID: Binding<Int?> {
+        Binding(
+            get: { selectedArticle?.id },
+            set: { newValue in
+                guard let newValue else {
+                    selectedArticle = nil
+                    return
+                }
+                selectedArticle = store.articles.first(where: { $0.id == newValue }) ?? selectedArticle
+            }
+        )
     }
 }

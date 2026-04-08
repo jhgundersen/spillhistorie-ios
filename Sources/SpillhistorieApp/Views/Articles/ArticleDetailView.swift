@@ -2,13 +2,14 @@ import SwiftUI
 
 struct ArticleDetailView: View {
     let articleID: Int
+    let fallbackArticle: Article?
     @Environment(ArticleStore.self) private var store
     @State private var blocks: [ArticleBlock] = []
     @State private var isLoading = true
     @State private var loadFailed = false
 
     private var article: Article? {
-        store.articles.first { $0.id == articleID }
+        store.articles.first { $0.id == articleID } ?? fallbackArticle
     }
 
     var body: some View {

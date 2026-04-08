@@ -47,6 +47,7 @@ enum PodcastFeedParser {
             let published = item.pubDate ?? Date()
             let author = item.iTunes?.iTunesAuthor ?? item.author ?? seriesName
             let artwork = item.iTunes?.iTunesImage?.attributes?.href.flatMap { URL(string: $0) } ?? feedArtwork
+            let summary = item.iTunes?.iTunesSummary ?? item.description
 
             // podcast:chapters is in the namespaced extensions — FeedKit exposes raw namespaced XML
             // Access via DublinCore or raw extensions dict (FeedKit v9 doesn't parse podcast: ns natively)
@@ -60,6 +61,7 @@ enum PodcastFeedParser {
                 series: seriesName,
                 author: author.htmlDecoded,
                 published: published,
+                summary: summary?.htmlStripped,
                 chapterURL: chapterURL,
                 artworkURL: artwork
             )
