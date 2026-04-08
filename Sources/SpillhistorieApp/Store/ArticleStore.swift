@@ -31,21 +31,26 @@ final class ArticleStore {
             isLoadingContent = false
             return
         }
-        for i in articles.indices {
-            if let e = enrichments[articles[i].id] {
-                articles[i].author = e.author
-                articles[i].contentHTML = e.contentHTML
-                articles[i].featuredImageURL = e.featuredImageURL
-            }
+        articles = articles.map { article in
+            guard let enrichment = enrichments[article.id] else { return article }
+            var updated = article
+            updated.author = enrichment.author
+            updated.contentHTML = enrichment.contentHTML
+            updated.featuredImageURL = enrichment.featuredImageURL
+            return updated
         }
         isLoadingContent = false
     }
 
     func applyEnrichment(_ enrichment: ArticleEnrichment, toArticleID id: Int) {
-        guard let idx = articles.firstIndex(where: { $0.id == id }) else { return }
-        articles[idx].author = enrichment.author
-        articles[idx].contentHTML = enrichment.contentHTML
-        articles[idx].featuredImageURL = enrichment.featuredImageURL
+        articles = articles.map { article in
+            guard article.id == id else { return article }
+            var updated = article
+            updated.author = enrichment.author
+            updated.contentHTML = enrichment.contentHTML
+            updated.featuredImageURL = enrichment.featuredImageURL
+            return updated
+        }
     }
 
     func refresh() async {

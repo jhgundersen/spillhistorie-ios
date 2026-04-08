@@ -57,11 +57,23 @@ enum HTMLParser {
                 let caption = (try? el.select("figcaption").text()) ?? ""
                 return parseImage(img, caption: caption.isEmpty ? nil : caption)
             }
+            if let media = parseEmbeddedMedia(el) {
+                return media
+            }
             // figure with no img — try as blockquote or skip
             return nil
 
         case "img":
             return parseImage(el)
+
+        case "audio":
+            return parseAudio(el)
+
+        case "video":
+            return parseVideo(el)
+
+        case "iframe":
+            return parseEmbed(el)
 
         case "blockquote":
             let inner = parseChildrenFlat(of: el)
@@ -99,7 +111,7 @@ enum HTMLParser {
             let text = (try? el.text()) ?? ""
             return text.isEmpty ? nil : .paragraph(inlines: [.text(text)])
 
-        case "script", "style", "noscript", "iframe", "form", "nav", "header", "footer":
+        case "script", "style", "noscript", "form", "nav", "header", "footer":
             return nil
 
         default:
@@ -112,6 +124,9 @@ enum HTMLParser {
     // MARK: - Paragraph parsing
 
     private static func parseParagraph(_ el: Element) -> ArticleBlock? {
+        if let media = parseEmbeddedMedia(el) {
+            return media
+        }
         // If paragraph contains an <img> (directly or inside <a>), emit it as an image block
         let imgs = (try? el.select("img").array()) ?? []
         if !imgs.isEmpty {
@@ -170,6 +185,113 @@ enum HTMLParser {
     }
 
     // MARK: - Image extraction
+
+    private static func parseEmbeddedMedia(_ el: Element) -> ArticleBlock? {
+        if let audio = try? el.select("audio").first(), let block = parseAudio(audio) {
+            return block
+        }
+        if let video = try? el.select("video").first(), let block = parseVideo(video) {
+            return block
+        }
+        if let iframe = try? el.select("iframe").first(), let block = parseEmbed(iframe) {
+            return block
+        }
+        if let mediaLink = parseMediaLink(el) {
+            return mediaLink
+        }
+        return nil
+    }
+
+    private static func parseMediaLink(_ el: Element) -> ArticleBlock? {
+        let links = (try? el.select("a").array()) ?? []
+        guard links.count == 1, let link = links.first else { return nil }
+        let text = ((try? el.text()) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        guard let href = try? link.attr("href") else { return nil }
+        return blockForMediaURLString(href, title: text)
+    }
+
+    private static func parseAudio(_ el: Element) -> ArticleBlock? {
+        if let source = firstSourceURL(in: el) {
+            return .audio(src: source)
+        }
+        if let src = try? el.attr("src"), !src.isEmpty,
+           let url = URL(string: ensureHTTPS(src.htmlDecoded)) {
+            return .audio(src: url)
+        }
+        return nil
+    }
+
+    private static func parseVideo(_ el: Element) -> ArticleBlock? {
+        let videoURL: URL?
+        if let source = firstSourceURL(in: el) {
+            videoURL = source
+        } else if let src = try? el.attr("src"), !src.isEmpty {
+            videoURL = URL(string: ensureHTTPS(src.htmlDecoded))
+        } else {
+            videoURL = nil
+        }
+        guard let videoURL else { return nil }
+
+        let poster: URL?
+        if let posterAttr = try? el.attr("poster"), !posterAttr.isEmpty {
+            poster = URL(string: ensureHTTPS(posterAttr.htmlDecoded))
+        } else {
+            poster = nil
+        }
+
+        return .video(src: videoURL, poster: poster)
+    }
+
+    private static func parseEmbed(_ el: Element) -> ArticleBlock? {
+        guard let src = try? el.attr("src"), !src.isEmpty else { return nil }
+        let title = (try? el.attr("title")).flatMap { $0.isEmpty ? nil : $0 }
+        return blockForMediaURLString(src, title: title)
+    }
+
+    private static func blockForMediaURLString(_ urlString: String, title: String?) -> ArticleBlock? {
+        let decoded = ensureHTTPS(urlString.htmlDecoded)
+        guard let url = URL(string: decoded) else { return nil }
+        let lowercased = decoded.lowercased()
+        if lowercased.contains("youtube.com") || lowercased.contains("youtu.be") {
+            return .embed(src: normalizedYouTubeURL(from: url) ?? url, title: title)
+        }
+        if lowercased.contains(".mp3") {
+            return .audio(src: url)
+        }
+        if lowercased.contains(".mp4") {
+            return .video(src: url, poster: nil)
+        }
+        return nil
+    }
+
+    private static func firstSourceURL(in el: Element) -> URL? {
+        let sources = (try? el.select("source").array()) ?? []
+        for source in sources {
+            if let src = try? source.attr("src"), !src.isEmpty,
+               let url = URL(string: ensureHTTPS(src.htmlDecoded)) {
+                return url
+            }
+        }
+        return nil
+    }
+
+    private static func normalizedYouTubeURL(from url: URL) -> URL? {
+        let absolute = url.absoluteString
+        if absolute.contains("/embed/") {
+            return url
+        }
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url
+        }
+        if let host = components.host, host.contains("youtu.be"), let videoID = components.path.split(separator: "/").last {
+            return URL(string: "https://www.youtube.com/embed/\(videoID)")
+        }
+        if let item = components.queryItems?.first(where: { $0.name == "v" }), let videoID = item.value {
+            return URL(string: "https://www.youtube.com/embed/\(videoID)")
+        }
+        return url
+    }
 
     private static func parseImage(_ img: Element, caption: String? = nil) -> ArticleBlock? {
         guard let src = bestSrc(from: img), let url = URL(string: ensureHTTPS(src)) else { return nil }

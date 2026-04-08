@@ -32,30 +32,20 @@ final class AudioPlayer {
     // MARK: - Public controls
 
     func play(_ episode: PodcastEpisode, from position: TimeInterval = 0) {
-        stop(saveResume: false)
-        currentEpisode = episode
-        state = .buffering
-        duration = TimeInterval(episode.durationSeconds)
+        prepare(episode, position: position, autoplay: true)
+    }
 
-        let item = AVPlayerItem(url: episode.audioURL)
-        player = AVPlayer(playerItem: item)
-        player?.seek(to: CMTime(seconds: position, preferredTimescale: 1000))
-        player?.play()
-        state = .playing
-        currentPosition = position
-
-        startPeriodicObserver()
-        nowPlaying.update(episode: episode, position: position, duration: duration)
-        loadChapters(for: episode)
-
-        NotificationCenter.default.addObserver(
-            self, selector: #selector(playerDidFinish),
-            name: .AVPlayerItemDidPlayToEndTime, object: item
-        )
+    func restore(_ episode: PodcastEpisode, from position: TimeInterval) {
+        prepare(episode, position: position, autoplay: false)
     }
 
     func togglePlayPause() {
-        guard let player else { return }
+        guard let player else {
+            if let episode = currentEpisode {
+                play(episode, from: currentPosition)
+            }
+            return
+        }
         if state == .playing {
             player.pause()
             state = .paused
@@ -123,6 +113,31 @@ final class AudioPlayer {
     }
 
     // MARK: - Private
+
+    private func prepare(_ episode: PodcastEpisode, position: TimeInterval, autoplay: Bool) {
+        stop(saveResume: false)
+        currentEpisode = episode
+        state = autoplay ? .buffering : .paused
+        duration = TimeInterval(episode.durationSeconds)
+
+        let item = AVPlayerItem(url: episode.audioURL)
+        player = AVPlayer(playerItem: item)
+        player?.seek(to: CMTime(seconds: position, preferredTimescale: 1000))
+        if autoplay {
+            player?.play()
+            state = .playing
+        }
+        currentPosition = position
+
+        startPeriodicObserver()
+        nowPlaying.update(episode: episode, position: position, duration: duration, isPlaying: autoplay)
+        loadChapters(for: episode)
+
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(playerDidFinish),
+            name: .AVPlayerItemDidPlayToEndTime, object: item
+        )
+    }
 
     private func setupAudioSession() {
         do {

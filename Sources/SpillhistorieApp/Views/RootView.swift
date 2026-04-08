@@ -6,8 +6,6 @@ struct RootView: View {
     @Environment(AudioPlayer.self) private var audioPlayer
     @State private var selectedCategory: ArticleCategory = ArticleCategory.all[0]
     @State private var showPodcasts = false
-    @State private var resumeEpisode: PodcastEpisode?
-    @State private var showResumeAlert = false
 
     var body: some View {
         NavigationSplitView {
@@ -34,27 +32,16 @@ struct RootView: View {
         }
         .task {
             await articleStore.loadCategory(selectedCategory)
-            // Check for resume state
+            await podcastStore.load()
             if let resume = audioPlayer.loadSavedResume() {
-                // Find matching episode after podcasts load
-                await podcastStore.load()
                 if let ep = podcastStore.episodes.first(where: { $0.audioURL.absoluteString == resume.audioURL.absoluteString }) {
-                    resumeEpisode = ep
-                    showResumeAlert = true
+                    audioPlayer.restore(ep, from: resume.positionSeconds)
                 }
-            } else {
-                Task { await podcastStore.load() }
             }
         }
         .onChange(of: selectedCategory) { _, newCat in
             showPodcasts = false
             Task { await articleStore.loadCategory(newCat) }
-        }
-        .alert("Fortsett avspilling?", isPresented: $showResumeAlert, presenting: resumeEpisode) { ep in
-            Button("Fortsett") { audioPlayer.play(ep, from: audioPlayer.loadSavedResume()?.positionSeconds ?? 0) }
-            Button("Avbryt", role: .cancel) { ResumeStateStore().clear() }
-        } message: { ep in
-            Text("Vil du fortsette å lytte til \"\(ep.title)\"?")
         }
     }
 }

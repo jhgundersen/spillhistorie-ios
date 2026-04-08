@@ -3,12 +3,13 @@ import Foundation
 enum WordPressAPI {
     private static let base = URL(string: "https://www.spillhistorie.no/wp-json/wp/v2")!
 
-    // MARK: - Phase 1: fast list fetch (titles + metadata only)
+    // MARK: - Phase 1: fast list fetch (titles + list metadata + thumbnails)
 
     static func fetchArticleList(category: ArticleCategory) async throws -> [Article] {
         var components = URLComponents(url: base.appendingPathComponent("posts"), resolvingAgainstBaseURL: false)!
         var items: [URLQueryItem] = [
-            URLQueryItem(name: "_fields", value: "id,link,date,title,tags"),
+            URLQueryItem(name: "_fields", value: "id,link,date,title,tags,_links,_embedded"),
+            URLQueryItem(name: "_embed", value: "author,wp:featuredmedia"),
             URLQueryItem(name: "per_page", value: "20"),
         ]
         if let catID = category.wpCategoryID {
@@ -68,6 +69,12 @@ private struct WPPost: Decodable {
     let date: String
     let title: WPRendered
     let tags: [Int]
+    let embedded: WPEmbedded?
+
+    enum CodingKeys: String, CodingKey {
+        case id, link, date, title, tags
+        case embedded = "_embedded"
+    }
 }
 
 private struct WPPostContent: Decodable {
@@ -125,7 +132,10 @@ private extension Article {
             title: post.title.rendered.htmlDecoded,
             link: link,
             published: date,
-            tagIDs: post.tags
+            tagIDs: post.tags,
+            author: post.embedded?.authors?.first?.name,
+            contentHTML: nil,
+            featuredImageURL: post.embedded?.media?.first?.sourceURL.flatMap { URL(string: $0) }
         )
     }
 }
