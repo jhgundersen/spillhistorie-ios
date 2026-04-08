@@ -1,6 +1,5 @@
 import AVKit
 import SwiftUI
-import WebKit
 
 struct ArticleView: View {
     let blocks: [ArticleBlock]
@@ -61,13 +60,107 @@ struct ArticleBlockView: View {
 
 private struct AudioBlockView: View {
     let src: URL
+    @State private var player = AVPlayer()
+    @State private var isPlaying = false
+    @State private var duration: Double = 0
+    @State private var currentTime: Double = 0
+    @State private var observer: Any?
 
     var body: some View {
-        HTMLAudioPlayerView(src: src)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(Color.secondary.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Button {
+                    togglePlayback()
+                } label: {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.headline)
+                        .frame(width: 36, height: 36)
+                        .background(Color.accentColor.opacity(0.14))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Slider(
+                        value: Binding(
+                            get: { duration > 0 ? currentTime : 0 },
+                            set: { newValue in
+                                currentTime = newValue
+                            }
+                        ),
+                        in: 0...(duration > 0 ? duration : 1),
+                        onEditingChanged: { editing in
+                            if !editing {
+                                let time = CMTime(seconds: currentTime, preferredTimescale: 600)
+                                player.seek(to: time)
+                            }
+                        }
+                    )
+
+                    HStack {
+                        Text(formatTime(currentTime))
+                        Spacer()
+                        Text(formatTime(duration))
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .task(id: src) {
+            await configurePlayer()
+        }
+        .onDisappear {
+            if let observer {
+                player.removeTimeObserver(observer)
+                self.observer = nil
+            }
+            player.pause()
+        }
+    }
+
+    private func configurePlayer() async {
+        if let observer {
+            player.removeTimeObserver(observer)
+            self.observer = nil
+        }
+
+        let item = AVPlayerItem(url: src)
+        player.replaceCurrentItem(with: item)
+        isPlaying = false
+        currentTime = 0
+        if let loadedDuration = try? await item.asset.load(.duration) {
+            duration = loadedDuration.seconds.isFinite ? loadedDuration.seconds : 0
+        } else {
+            duration = 0
+        }
+
+        let interval = CMTime(seconds: 0.25, preferredTimescale: 600)
+        observer = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+            currentTime = time.seconds.isFinite ? time.seconds : 0
+            if let itemDuration = player.currentItem?.duration.seconds, itemDuration.isFinite {
+                duration = itemDuration
+            }
+        }
+    }
+
+    private func togglePlayback() {
+        if isPlaying {
+            player.pause()
+            isPlaying = false
+        } else {
+            player.play()
+            isPlaying = true
+        }
+    }
+
+    private func formatTime(_ value: Double) -> String {
+        guard value.isFinite, value >= 0 else { return "0:00" }
+        let total = Int(value)
+        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }
 
@@ -206,42 +299,5 @@ private struct EmbedBlockView: View {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
-    }
-}
-
-private struct HTMLAudioPlayerView: UIViewRepresentable {
-    let src: URL
-
-    func makeUIView(context: Context) -> WKWebView {
-        let configuration = WKWebViewConfiguration()
-        configuration.allowsInlineMediaPlayback = true
-        let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.scrollView.isScrollEnabled = false
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        return webView
-    }
-
-    func updateUIView(_ webView: WKWebView, context: Context) {
-        webView.loadHTMLString(audioHTML(for: src), baseURL: nil)
-    }
-
-    private func audioHTML(for src: URL) -> String {
-        let escaped = src.absoluteString.replacingOccurrences(of: "&", with: "&amp;")
-        return """
-        <html>
-        <head>
-        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0\">
-        <style>
-        html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-        body { display: flex; align-items: center; justify-content: center; }
-        audio { width: 100%; height: 44px; }
-        </style>
-        </head>
-        <body>
-        <audio controls preload=\"metadata\" src=\"\(escaped)\"></audio>
-        </body>
-        </html>
-        """
     }
 }
