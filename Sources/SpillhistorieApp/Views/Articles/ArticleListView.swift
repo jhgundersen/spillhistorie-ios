@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ArticleListView: View {
     @Environment(ArticleStore.self) private var store
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     let category: ArticleCategory
     @Binding var selectedArticle: Article?
     @State private var searchText = ""
@@ -26,27 +27,41 @@ struct ArticleListView: View {
                     description: Text(error)
                 )
             } else {
-                List(filtered, selection: selectedArticleID) { article in
-                    ArticleRowView(article: article)
-                        .tag(article.id)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
+                if horizontalSizeClass == .compact {
+                    List(filtered) { article in
+                        NavigationLink(value: article.id) {
+                            ArticleRowView(article: article)
+                        }
+                        .simultaneousGesture(TapGesture().onEnded {
                             selectedArticle = article
-                        }
+                        })
                         .contextMenu {
-                            Button("Apne i Safari", systemImage: "safari") {
-                                UIApplication.shared.open(article.link)
-                            }
-                            ShareLink(item: article.link, subject: Text(article.title)) {
-                                Label("Del", systemImage: "square.and.arrow.up")
-                            }
+                            articleContextMenu(article)
                         }
+                    }
+                    .navigationDestination(for: Int.self) { articleID in
+                        ArticleDetailView(articleID: articleID, fallbackArticle: store.articles.first(where: { $0.id == articleID }) ?? selectedArticle)
+                    }
+                    .listStyle(.plain)
+                    .refreshable { await store.refresh() }
+                } else {
+                    List(filtered, selection: selectedArticleID) { article in
+                        ArticleRowView(article: article)
+                            .tag(article.id)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedArticle = article
+                            }
+                            .contextMenu {
+                                articleContextMenu(article)
+                            }
+                    }
+                    .listStyle(.plain)
+                    .refreshable { await store.refresh() }
                 }
-                .listStyle(.plain)
-                .refreshable { await store.refresh() }
             }
         }
-        .searchable(text: $searchText, prompt: "Sok i artikler")
+        .searchable(text: $searchText, prompt: "Søk i artikler")
         .navigationTitle(category.name)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: category.id) {
@@ -75,5 +90,15 @@ struct ArticleListView: View {
                 selectedArticle = store.articles.first(where: { $0.id == newValue }) ?? selectedArticle
             }
         )
+    }
+
+    @ViewBuilder
+    private func articleContextMenu(_ article: Article) -> some View {
+        Button("Apne i Safari", systemImage: "safari") {
+            UIApplication.shared.open(article.link)
+        }
+        ShareLink(item: article.link, subject: Text(article.title)) {
+            Label("Del", systemImage: "square.and.arrow.up")
+        }
     }
 }

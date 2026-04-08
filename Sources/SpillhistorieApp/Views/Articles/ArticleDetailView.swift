@@ -22,6 +22,7 @@ struct ArticleDetailView: View {
                 heroImage
                 articleBody
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .id(articleID)
         }
         .navigationTitle(article?.title ?? "")
@@ -104,8 +105,9 @@ struct ArticleDetailView: View {
                     .fontDesign(settings.fontStyle.design)
             }
         }
-        .padding(.horizontal, horizontalSizeClass == .compact ? 16 : 20)
+        .padding(.horizontal, horizontalSizeClass == .compact ? 22 : 20)
         .padding(.bottom, 48)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Loading

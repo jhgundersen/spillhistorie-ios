@@ -1,4 +1,4 @@
-name: SpillhistorieApp
+name: Spillhistorie
 options:
   bundleIdPrefix: no.jonh
   deploymentTarget:
@@ -16,7 +16,7 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     PRODUCT_BUNDLE_IDENTIFIER: no.jonh.spillhistorie
     INFOPLIST_FILE: Sources/SpillhistorieApp/Info.plist
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "E8XDVEX348"
 
 packages:
   SwiftSoup:
@@ -27,7 +27,7 @@ packages:
     minorVersion: "9.1.2"
 
 targets:
-  SpillhistorieApp:
+  Spillhistorie:
     type: application
     platform: iOS
     sources:
@@ -67,3 +67,4 @@ targets:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
+        PRODUCT_NAME: Spillhistorie

@@ -13,33 +13,39 @@ struct RootView: View {
     @State private var selectedEpisode: PodcastEpisode?
 
     var body: some View {
-        NavigationSplitView {
-            SidebarView(
-                selectedCategory: $selectedCategory,
-                showPodcasts: $showPodcasts,
-                showSettings: $showSettings
-            )
-        } content: {
-            if showSettings {
-                SettingsPromptView()
-            } else if showPodcasts {
-                PodcastListView(selectedEpisode: $selectedEpisode)
+        Group {
+            if horizontalSizeClass == .compact {
+                CompactRootView(selectedArticle: $selectedArticle, selectedEpisode: $selectedEpisode)
             } else {
-                ArticleListView(category: selectedCategory, selectedArticle: $selectedArticle)
-            }
-        } detail: {
-            if showSettings {
-                SettingsView()
-            } else if showPodcasts, let selectedEpisode {
-                PodcastEpisodeDetailView(episode: selectedEpisode)
-            } else if let selectedArticle {
-                ArticleDetailView(articleID: selectedArticle.id, fallbackArticle: selectedArticle)
-            } else {
-                ContentUnavailableView(
-                    showPodcasts ? "Velg en episode" : "Velg en artikkel",
-                    systemImage: showPodcasts ? "mic" : "doc.text",
-                    description: Text(showPodcasts ? "Velg en episode fra listen til venstre." : "Velg en artikkel fra listen til venstre.")
-                )
+                NavigationSplitView {
+                    SidebarView(
+                        selectedCategory: $selectedCategory,
+                        showPodcasts: $showPodcasts,
+                        showSettings: $showSettings
+                    )
+                } content: {
+                    if showSettings {
+                        SettingsPromptView()
+                    } else if showPodcasts {
+                        PodcastListView(selectedEpisode: $selectedEpisode)
+                    } else {
+                        ArticleListView(category: selectedCategory, selectedArticle: $selectedArticle)
+                    }
+                } detail: {
+                    if showSettings {
+                        SettingsView()
+                    } else if showPodcasts, let selectedEpisode {
+                        PodcastEpisodeDetailView(episode: selectedEpisode)
+                    } else if let selectedArticle {
+                        ArticleDetailView(articleID: selectedArticle.id, fallbackArticle: selectedArticle)
+                    } else {
+                        ContentUnavailableView(
+                            showPodcasts ? "Velg en episode" : "Velg en artikkel",
+                            systemImage: showPodcasts ? "mic" : "doc.text",
+                            description: Text(showPodcasts ? "Velg en episode fra listen til venstre." : "Velg en artikkel fra listen til venstre.")
+                        )
+                    }
+                }
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -60,6 +66,67 @@ struct RootView: View {
             Task { await articleStore.loadCategory(newCat) }
         }
     }
+}
+
+private struct CompactRootView: View {
+    @Binding var selectedArticle: Article?
+    @Binding var selectedEpisode: PodcastEpisode?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Artikler") {
+                    ForEach(ArticleCategory.all) { category in
+                        NavigationLink(value: CompactRoute.category(category)) {
+                            Label(category.name, systemImage: categoryIcon(category))
+                        }
+                    }
+                }
+
+                Section("Podkast") {
+                    NavigationLink(value: CompactRoute.podcasts) {
+                        Label("Alle episoder", systemImage: "waveform")
+                    }
+                }
+
+                Section("App") {
+                    NavigationLink(value: CompactRoute.settings) {
+                        Label("Innstillinger", systemImage: "gearshape")
+                    }
+                }
+            }
+            .navigationTitle("Spillhistorie")
+            .navigationDestination(for: CompactRoute.self) { route in
+                switch route {
+                case .category(let category):
+                    ArticleListView(category: category, selectedArticle: $selectedArticle)
+                case .podcasts:
+                    PodcastListView(selectedEpisode: $selectedEpisode)
+                case .settings:
+                    SettingsView()
+                }
+            }
+        }
+    }
+
+    private func categoryIcon(_ cat: ArticleCategory) -> String {
+        switch cat.id {
+        case "framside": return "house"
+        case "nyespill": return "gamecontroller"
+        case "retro": return "clock.arrow.circlepath"
+        case "indie": return "sparkles"
+        case "inntrykk": return "eye"
+        case "features": return "star"
+        case "quiz": return "questionmark.circle"
+        default: return "doc.text"
+        }
+    }
+}
+
+private enum CompactRoute: Hashable {
+    case category(ArticleCategory)
+    case podcasts
+    case settings
 }
 
 private struct SettingsPromptView: View {
@@ -114,7 +181,7 @@ private struct SettingsView: View {
     }
 }
 
-private struct PodcastEpisodeDetailView: View {
+struct PodcastEpisodeDetailView: View {
     let episode: PodcastEpisode
 
     @Environment(AudioPlayer.self) private var player
@@ -195,36 +262,41 @@ private struct PodcastEpisodeDetailView: View {
                     player.play(episode, using: podcastStore.playbackURL(for: episode))
                 }
             } label: {
-                Label(player.currentEpisode?.id == episode.id && player.state == .playing ? "Pause" : "Spill av", systemImage: player.currentEpisode?.id == episode.id && player.state == .playing ? "pause.fill" : "play.fill")
+                Image(systemName: player.currentEpisode?.id == episode.id && player.state == .playing ? "pause.fill" : "play.fill")
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityLabel(player.currentEpisode?.id == episode.id && player.state == .playing ? "Pause" : "Spill av")
 
             Button {
                 player.play(episode, using: podcastStore.playbackURL(for: episode), from: 0)
             } label: {
-                Label("Fra starten", systemImage: "arrow.counterclockwise")
+                Image(systemName: "arrow.counterclockwise")
             }
             .buttonStyle(.bordered)
+            .accessibilityLabel("Fra starten")
 
             ShareLink(item: episode.audioURL) {
-                Label("Del episode", systemImage: "square.and.arrow.up")
+                Image(systemName: "square.and.arrow.up")
             }
+            .accessibilityLabel("Del episode")
 
             if podcastStore.isDownloaded(episode) {
                 Button(role: .destructive) {
                     podcastStore.deleteDownload(for: episode)
                 } label: {
-                    Label("Slett nedlasting", systemImage: "trash")
+                    Image(systemName: "trash")
                 }
                 .buttonStyle(.bordered)
+                .accessibilityLabel("Slett nedlasting")
             } else {
                 Button {
                     Task { await podcastStore.downloadEpisode(episode) }
                 } label: {
-                    Label(podcastStore.isDownloading(episode) ? "Laster ned..." : "Last ned", systemImage: podcastStore.isDownloading(episode) ? "arrow.down.circle.dotted" : "arrow.down.circle")
+                    Image(systemName: podcastStore.isDownloading(episode) ? "arrow.down.circle.dotted" : "arrow.down.circle")
                 }
                 .buttonStyle(.bordered)
                 .disabled(podcastStore.isDownloading(episode))
+                .accessibilityLabel(podcastStore.isDownloading(episode) ? "Laster ned" : "Last ned")
             }
         }
     }
